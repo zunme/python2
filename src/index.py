@@ -99,11 +99,6 @@ def getallpage(sido, sigungu ) :
             time.sleep(conf.page_sleep_time)
             geturl(sido,sigungu,page)
 
-    with conn.cursor() as cursor:
-        sql = "insert into potal_log (sigungu,totalpage ) values( %s, %s)"
-        cursor.execute(sql, (sigungu, totalpage))
-    conn.commit()
-
     totalpage = 0
     time.sleep(conf.sigungu_sleep_time)
 
@@ -160,13 +155,26 @@ conn = pymysql.connect(host=conf.db_host,
         password=conf.db_pwd,
         db=conf.db_db,
         charset=conf.db_char)
+
+with conn.cursor() as cursor:
+    sql = 'SELECT IFNULL( COUNT(1) ,0) AS cnt from potal_log a WHERE a.logtime > CURDATE()'
+    cursor.execute(sql)
+    logcnt = cursor.fetchone()
+if  int(logcnt[0]) > 0 :
+    print("there is today log")
+    exit()
+
 s = requests.Session()
 s.headers.update({'referer': conf.start_referer})
 init()
 
 with conn.cursor() as cursor:
     sql = "TRUNCATE potal_prc_log"
-    cursor.execute(sql, (sigungu))
+    cursor.execute(sql)
+conn.commit()
+with conn.cursor() as cursor:
+    sql = 'INSERT into potal_log ( logtime, isDone) VALUES ( NOW(), "Y")' 
+    cursor.execute(sql)
 conn.commit()
 
 upateGeo()
